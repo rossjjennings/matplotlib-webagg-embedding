@@ -11,12 +11,6 @@ import matplotlib as mpl
 from matplotlib.backends.backend_webagg_core import (
     FigureManagerWebAgg, new_figure_manager_given_figure)
 
-import jinja2
-
-# The following is the content of the web page.
-env = jinja2.Environment(loader=jinja2.FileSystemLoader("/home/ross/python/matplotlib-flask-testing/test-webagg-embedding-flask"))
-page_template = env.get_template("template.html")
-
 class MyApplication(tornado.web.Application):
     class MainPage(tornado.web.RequestHandler):
         """
@@ -26,7 +20,7 @@ class MyApplication(tornado.web.Application):
         def get(self):
             manager = self.application.manager
             ws_uri = "ws://{req.host}/".format(req=self.request)
-            content = page_template.render(ws_uri=ws_uri, fig_id=manager.num)
+            content = self.render("template.html", ws_uri=ws_uri, fig_id=manager.num)
             self.write(content)
 
     class MplJs(tornado.web.RequestHandler):
