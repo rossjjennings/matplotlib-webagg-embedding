@@ -1,15 +1,27 @@
 import numpy as np
 from matplotlib.figure import Figure
+import matplotlib as mpl
+from matplotlib.backends.backend_webagg_core import (
+    FigureManagerWebAgg,
+    new_figure_manager_given_figure,
+)
 
 import argparse
 import signal
 import socket
+import io
+import json
+import mimetypes
+from pathlib import Path
+import asyncio
 
 import tornado
 import tornado.httpserver
+import tornado.web
+import tornado.websocket
 import tornado.ioloop
 
-from websocket_app import MyApplication
+from figure_handler import FigureHandler
 
 def create_figure():
     """
@@ -22,37 +34,70 @@ def create_figure():
     ax.plot(t, s)
     return fig
 
+class MainPage(tornado.web.RequestHandler):
+    """
+    Serves the main HTML page.
+    """
+
+    def get(self):
+        ws_uri = "ws://{req.host}/".format(req=self.request)
+        self.render("template.html", ws_uri=ws_uri, fig_id=1)
+
+class MplJs(tornado.web.RequestHandler):
+    """
+    Serves the generated matplotlib javascript file.  The content
+    is dynamically generated based on which toolbar functions the
+    user has defined.  Call `FigureManagerWebAgg` to get its
+    content.
+    """
+
+    def get(self):
+        self.set_header('Content-Type', 'application/javascript')
+        js_content = FigureManagerWebAgg.get_javascript()
+
+        self.write(js_content)
+
+def make_app():
+    figure = create_figure()
+    handler = FigureHandler(figure, 1)
+    application = tornado.web.Application([
+        # Static files for the CSS and JS
+        (r'/_static/(.*)',
+            tornado.web.StaticFileHandler,
+            {'path': FigureManagerWebAgg.get_static_file_path()}),
+
+        # Static images for the toolbar
+        (r'/_images/(.*)',
+            tornado.web.StaticFileHandler,
+            {'path': Path(mpl.get_data_path(), 'images')}),
+
+        # The page that contains all of the pieces
+        ('/', MainPage),
+
+        ('/mpl.js', MplJs),
+
+        # Sends images and events to the browser, and receives
+        # events from the browser
+        ('/ws', handler.socket),
+
+        # Handles the downloading (i.e., saving) of static images
+        (r'/download.([a-z0-9.]+)', handler.downloader),
+    ])
+    return application
+    
+
+async def launch_app(port):
+    app = make_app()
+    app.listen(port)
+    shutdown_event = asyncio.Event()
+    await shutdown_event.wait()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--port', type=int, default=8080,
                         help='Port to listen on (0 for a random port).')
     args = parser.parse_args()
-
-    figure = create_figure()
-    application = MyApplication(figure)
-
-    http_server = tornado.httpserver.HTTPServer(application)
-    sockets = tornado.netutil.bind_sockets(args.port, '')
-    http_server.add_sockets(sockets)
-
-    for s in sockets:
-        addr, port = s.getsockname()[:2]
-        if s.family is socket.AF_INET6:
-            addr = f'[{addr}]'
-        print(f"Listening on http://{addr}:{port}/")
+    
+    print(f"Listening on port {args.port}")
     print("Press Ctrl+C to quit")
-
-    ioloop = tornado.ioloop.IOLoop.instance()
-
-    def shutdown():
-        ioloop.stop()
-        print("Server stopped")
-
-    old_handler = signal.signal(
-        signal.SIGINT,
-        lambda sig, frame: ioloop.add_callback_from_signal(shutdown))
-
-    try:
-        ioloop.start()
-    finally:
-        signal.signal(signal.SIGINT, old_handler)
+    asyncio.run(launch_app(args.port))
