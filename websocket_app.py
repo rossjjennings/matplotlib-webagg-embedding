@@ -108,7 +108,7 @@ class MyApplication(tornado.web.Application):
 
     def __init__(self, figure):
         self.figure = figure
-        self.manager = new_figure_manager_given_figure(id(figure), figure)
+        self.manager = new_figure_manager_given_figure(1, figure)
 
         super().__init__([
             # Static files for the CSS and JS
