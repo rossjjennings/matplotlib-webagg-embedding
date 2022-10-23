@@ -20,8 +20,7 @@ class MyApplication(tornado.web.Application):
         def get(self):
             manager = self.application.manager
             ws_uri = "ws://{req.host}/".format(req=self.request)
-            content = self.render("template.html", ws_uri=ws_uri, fig_id=manager.num)
-            self.write(content)
+            self.render("template.html", ws_uri=ws_uri, fig_id=manager.num)
 
     class MplJs(tornado.web.RequestHandler):
         """
