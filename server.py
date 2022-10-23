@@ -38,7 +38,6 @@ class MainPage(tornado.web.RequestHandler):
     """
     Serves the main HTML page.
     """
-
     def get(self):
         ws_uri = "ws://{req.host}/".format(req=self.request)
         self.render("template.html", ws_uri=ws_uri, fig_id=1)
@@ -50,7 +49,6 @@ class MplJs(tornado.web.RequestHandler):
     user has defined.  Call `FigureManagerWebAgg` to get its
     content.
     """
-
     def get(self):
         self.set_header('Content-Type', 'application/javascript')
         js_content = FigureManagerWebAgg.get_javascript()
@@ -59,7 +57,7 @@ class MplJs(tornado.web.RequestHandler):
 
 def make_app():
     figure = create_figure()
-    handler = FigureHandler(figure, 1)
+    handler = FigureHandler(figure, fig_id=1)
     application = tornado.web.Application([
         # Static files for the CSS and JS
         (r'/_static/(.*)',
@@ -84,7 +82,6 @@ def make_app():
         (r'/download.([a-z0-9.]+)', handler.downloader),
     ])
     return application
-    
 
 async def launch_app(port):
     app = make_app()
@@ -95,7 +92,7 @@ async def launch_app(port):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--port', type=int, default=8080,
-                        help='Port to listen on (0 for a random port).')
+                        help='Port to listen on.')
     args = parser.parse_args()
     
     print(f"Listening on port {args.port}")

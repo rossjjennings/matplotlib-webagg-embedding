@@ -13,10 +13,12 @@ from matplotlib.backends.backend_webagg_core import (
 
 class FigureHandler:
     """
-    A convenient way to encapsulate the pieces needed to add a figure
-    to a Tornado web application, those pieces being:
-     - A WebSocket class ("socket") inheriting from tornado.websocket.WebSocketHandler
-     - A Downloader class ("downloader") inheriting from tornado.web.RequestHandler
+    A convenient way to encapsulate the pieces needed to add a figure to a 
+    Tornado web application, those pieces being:
+     - A WebSocket class ("socket") inheriting from 
+       tornado.websocket.WebSocketHandler
+     - A Downloader class ("downloader") inheriting from 
+       tornado.web.RequestHandler
      - A bit of JavaScript ("js") to add to the webpage.
     """
     def __init__(handler, figure, fig_id):
