@@ -39,8 +39,7 @@ class MainPage(tornado.web.RequestHandler):
     Serves the main HTML page.
     """
     def get(self):
-        ws_uri = "ws://{req.host}/".format(req=self.request)
-        self.render("template.html", ws_uri=ws_uri, fig_id=1)
+        self.render("template.html")
 
 class MplJs(tornado.web.RequestHandler):
     """
@@ -54,6 +53,15 @@ class MplJs(tornado.web.RequestHandler):
         js_content = FigureManagerWebAgg.get_javascript()
 
         self.write(js_content)
+
+class FigureJs(tornado.web.RequestHandler):
+    """
+    Serves the JavaScript necessary to load the figure and set up
+    the associated WebSocket on the client side.
+    """
+    def get(self):
+        sock_uri = "ws://{req.host}/ws".format(req=self.request)
+        self.render("mpl_figure.js", sock_uri=sock_uri, fig_id=1)
 
 def make_app():
     figure = create_figure()
@@ -73,6 +81,7 @@ def make_app():
         ('/', MainPage),
 
         ('/mpl.js', MplJs),
+        ('/mpl_figure.js', FigureJs),
 
         # Sends images and events to the browser, and receives
         # events from the browser
