@@ -23,7 +23,7 @@ import tornado.ioloop
 
 from figure_handler import FigureHandler
 
-def create_figure():
+def create_figure1():
     """
     Creates a simple example figure.
     """
@@ -31,6 +31,17 @@ def create_figure():
     ax = fig.add_subplot()
     t = np.arange(0.0, 3.0, 0.01)
     s = np.sin(2 * np.pi * t)
+    ax.plot(t, s)
+    return fig
+
+def create_figure2():
+    """
+    Creates another simple example figure.
+    """
+    fig = Figure()
+    ax = fig.add_subplot()
+    t = np.arange(-1.0, 1.0, 0.01)
+    s = np.sin(t**2)
     ax.plot(t, s)
     return fig
 
@@ -66,13 +77,21 @@ class FigureJs(tornado.web.RequestHandler):
         self.render("mpl_figure.js", js_block=self.js_block)
 
 def make_app():
-    figure = create_figure()
+    figure1 = create_figure1()
+    figure2 = create_figure2()
     
-    handler = FigureHandler(
-        figure,
+    handler1 = FigureHandler(
+        figure1,
         fig_id=1,
-        sock_uri="ws://localhost:8080/ws",
-        elt_id="figure",
+        sock_uri="ws://localhost:8080/ws1",
+        elt_id="figure1",
+    )
+    
+    handler2 = FigureHandler(
+        figure2,
+        fig_id=2,
+        sock_uri="ws://localhost:8080/ws2",
+        elt_id="figure2",
     )
     
     application = tornado.web.Application([
@@ -90,14 +109,15 @@ def make_app():
         ('/', MainPage),
 
         ('/mpl.js', MplJs),
-        ('/mpl_figure.js', FigureJs, {'figure_handlers': [handler]}),
+        ('/mpl_figure.js', FigureJs, {'figure_handlers': [handler1, handler2]}),
 
         # Sends images and events to the browser, and receives
         # events from the browser
-        ('/ws', handler.socket),
+        ('/ws1', handler1.socket),
+        ('/ws2', handler2.socket),
 
         # Handles the downloading (i.e., saving) of static images
-        (r'/download.([a-z0-9.]+)', handler.downloader),
+        (r'/download.([a-z0-9.]+)', handler1.downloader),
     ])
     return application
 
