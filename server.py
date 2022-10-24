@@ -71,7 +71,7 @@ def make_app():
     handler = FigureHandler(
         figure,
         fig_id=1,
-        sock_uri="ws://127.0.0.1/ws",
+        sock_uri="ws://localhost:8080/ws",
         elt_id="figure",
     )
     
