@@ -22,17 +22,6 @@ function() {
         also be a "fake" websocket that underneath multiplexes messages
         from multiple figures, if necessary. */
     var websocket_type = mpl.get_websocket_type();
-    var websocket = new websocket_type("{{ sock_uri }}");
-
-    // mpl.figure creates a new figure on the webpage.
-    var fig = new mpl.figure(
-        // A unique numeric identifier for the figure
-        {{ fig_id }},
-        // A websocket object (or something that behaves like one)
-        websocket,
-        // A function called when a file type is selected for download
-        ondownload,
-        // The HTML element in which to place the figure
-        document.getElementById("figure"));
+    {% raw js_block %}
 }
 );

@@ -21,10 +21,12 @@ class FigureHandler:
        tornado.web.RequestHandler
      - A bit of JavaScript ("js") to add to the webpage.
     """
-    def __init__(handler, figure, fig_id):
+    def __init__(handler, figure, fig_id, sock_uri, elt_id="figure"):
         handler.figure = figure
         handler.manager = new_figure_manager_given_figure(fig_id, figure)
         handler.fig_id = fig_id
+        handler.elt_id = elt_id
+        handler.sock_uri = sock_uri
         
         class Downloader(tornado.web.RequestHandler):
             """
@@ -96,3 +98,13 @@ class FigureHandler:
                         blob.encode('base64').replace('\n', ''))
                     self.write_message(data_uri)
         handler.socket = WebSocket
+
+        handler.js = f"""
+            var websocket = new websocket_type("{sock_uri}");
+            var fig = new mpl.figure(
+                {fig_id},
+                websocket,
+                ondownload,
+                document.getElementById("{elt_id}")
+            );
+            """

@@ -59,13 +59,22 @@ class FigureJs(tornado.web.RequestHandler):
     Serves the JavaScript necessary to load the figure and set up
     the associated WebSocket on the client side.
     """
+    def initialize(self, figure_handlers):
+        self.js_block = "".join(handler.js for handler in figure_handlers)
+        
     def get(self):
-        sock_uri = "ws://{req.host}/ws".format(req=self.request)
-        self.render("mpl_figure.js", sock_uri=sock_uri, fig_id=1)
+        self.render("mpl_figure.js", js_block=self.js_block)
 
 def make_app():
     figure = create_figure()
-    handler = FigureHandler(figure, fig_id=1)
+    
+    handler = FigureHandler(
+        figure,
+        fig_id=1,
+        sock_uri="ws://127.0.0.1/ws",
+        elt_id="figure",
+    )
+    
     application = tornado.web.Application([
         # Static files for the CSS and JS
         (r'/_static/(.*)',
@@ -81,7 +90,7 @@ def make_app():
         ('/', MainPage),
 
         ('/mpl.js', MplJs),
-        ('/mpl_figure.js', FigureJs),
+        ('/mpl_figure.js', FigureJs, {'figure_handlers': [handler]}),
 
         # Sends images and events to the browser, and receives
         # events from the browser
